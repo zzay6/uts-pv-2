@@ -22,8 +22,8 @@ Partial Class Form1
     'Do not modify it using the code editor.
     <System.Diagnostics.DebuggerStepThrough()>
     Private Sub InitializeComponent()
-        Dim selectPosition As ComboBox
         GroupBox1 = New GroupBox()
+        selectPosition = New ComboBox()
         txtBirthDate = New DateTimePicker()
         Label5 = New Label()
         Label4 = New Label()
@@ -48,7 +48,6 @@ Partial Class Form1
         Button1 = New Button()
         Button2 = New Button()
         Button3 = New Button()
-        selectPosition = New ComboBox()
         GroupBox1.SuspendLayout()
         GroupBox2.SuspendLayout()
         SuspendLayout()
@@ -65,6 +64,7 @@ Partial Class Form1
         GroupBox1.Controls.Add(txtName)
         GroupBox1.Controls.Add(Label1)
         GroupBox1.Controls.Add(txtEmpNumber)
+        GroupBox1.ForeColor = Color.Blue
         GroupBox1.Location = New Point(12, 12)
         GroupBox1.Name = "GroupBox1"
         GroupBox1.Size = New Size(386, 267)
@@ -74,12 +74,14 @@ Partial Class Form1
         ' 
         ' selectPosition
         ' 
+        selectPosition.AccessibleRole = AccessibleRole.None
+        selectPosition.DropDownStyle = ComboBoxStyle.DropDownList
         selectPosition.FormattingEnabled = True
         selectPosition.Items.AddRange(New Object() {"Staff", "Supervisor", "Manager"})
-        selectPosition.Location = New Point(133, 187)
+        selectPosition.Location = New Point(129, 186)
         selectPosition.Name = "selectPosition"
-        selectPosition.Size = New Size(236, 28)
-        selectPosition.TabIndex = 11
+        selectPosition.Size = New Size(241, 28)
+        selectPosition.TabIndex = 12
         ' 
         ' txtBirthDate
         ' 
@@ -110,6 +112,7 @@ Partial Class Form1
         ' Label3
         ' 
         Label3.AutoSize = True
+        Label3.ForeColor = Color.Blue
         Label3.Location = New Point(17, 115)
         Label3.Name = "Label3"
         Label3.Size = New Size(79, 20)
@@ -165,6 +168,7 @@ Partial Class Form1
         GroupBox2.Controls.Add(txtDate)
         GroupBox2.Controls.Add(txtNumClosing)
         GroupBox2.Controls.Add(Label7)
+        GroupBox2.ForeColor = Color.Coral
         GroupBox2.Location = New Point(404, 12)
         GroupBox2.Name = "GroupBox2"
         GroupBox2.Size = New Size(384, 196)
@@ -243,6 +247,7 @@ Partial Class Form1
         ' Label6
         ' 
         Label6.AutoSize = True
+        Label6.ForeColor = Color.Blue
         Label6.Location = New Point(30, 240)
         Label6.Name = "Label6"
         Label6.Size = New Size(83, 20)
@@ -261,7 +266,7 @@ Partial Class Form1
         ' 
         ListView1.Location = New Point(13, 288)
         ListView1.Name = "ListView1"
-        ListView1.Size = New Size(1181, 150)
+        ListView1.Size = New Size(1272, 150)
         ListView1.TabIndex = 13
         ListView1.UseCompatibleStateImageBehavior = False
         ' 
@@ -355,6 +360,7 @@ Partial Class Form1
 
     Dim honor As Integer
     Dim commision As Decimal
+    Dim dataList As New List(Of String())()
 
     Friend WithEvents Label10 As Label
     Friend WithEvents txtHonorCommision As TextBox
@@ -376,10 +382,10 @@ Partial Class Form1
             honor = 1500000
         ElseIf position = "Supervisor" Then
             honor = 5000000
-        Else
+        ElseIf position = "Manager" Then
             honor = 8000000
         End If
-        Call Calculate()
+        Calculate()
         txtHonor.Text = honor.ToString("N0", Globalization.CultureInfo.GetCultureInfo("id-ID"))
     End Sub
 
@@ -390,7 +396,14 @@ Partial Class Form1
 
     Sub Calculate()
         Dim numClosing As Integer = If(String.IsNullOrWhiteSpace(txtNumClosing.Text), 0, Convert.ToInt32(txtNumClosing.Text))
-        commision = numClosing * (5 / 100) * honor
+        Dim rate As Decimal = (5 / 100)
+        Dim foundData As String() = dataList.FirstOrDefault(Function(row) row(0) = txtEmpNumber.Text())
+        If foundData IsNot Nothing Then
+            rate = (8 / 100)
+        End If
+
+        commision = numClosing * rate * honor
+
         Debug.WriteLine(commision)
         txtAmountCommision.Text = commision.ToString("N0", Globalization.CultureInfo.GetCultureInfo("id-ID"))
         txtHonorCommision.Text = (commision + honor).ToString("N0", Globalization.CultureInfo.GetCultureInfo("id-ID"))
@@ -425,30 +438,17 @@ Partial Class Form1
             Return False
         End If
 
+        Dim foundData As String() = dataList.FirstOrDefault(Function(row) row(0) = txtEmpNumber.Text() And row(4) = txtDate.Text())
+        If foundData IsNot Nothing Then
+            MessageBox.Show("Employee with same date was exists", "Input Error", MessageBoxButtons.OK, MessageBoxIcon.Error)
+            Return False
+        End If
+
         Return True
     End Function
 
 
-    Private Sub Button1_Click(sender As Object, e As EventArgs) Handles Button1.Click
-        If ValidateInput() Then
-
-            Dim listitem As ListViewItem
-
-            listitem = New ListViewItem
-            listitem = ListView1.Items.Add(txtEmpNumber.Text)
-            listitem.SubItems.Add(txtName.Text)
-            listitem.SubItems.Add(selectPosition.Text)
-            listitem.SubItems.Add(txtHonor.Text)
-            listitem.SubItems.Add(txtDate.Text)
-            listitem.SubItems.Add(txtNumClosing.Text)
-            listitem.SubItems.Add(commision.ToString("N0", Globalization.CultureInfo.GetCultureInfo("id-ID")))
-            listitem.SubItems.Add(txtHonorCommision.Text)
-
-            MessageBox.Show("Berhasil")
-        End If
-    End Sub
-
-    Private Sub Button2_Click(sender As Object, e As EventArgs) Handles Button2.Click
+    Sub clearInput()
         txtEmpNumber.Text = ""
         txtName.Text = ""
         txtBirthDate.Text = ""
@@ -461,7 +461,52 @@ Partial Class Form1
         selectPosition.SelectedIndex = -1
     End Sub
 
-    Private Sub Button3_Click(sender As Object, e As EventArgs) Handles Button3.Click
-        Stop
+
+    Private Sub Button1_Click(sender As Object, e As EventArgs) Handles Button1.Click
+        If ValidateInput() Then
+
+            Dim rowData(7) As String
+            rowData(0) = txtEmpNumber.Text
+            rowData(1) = txtName.Text
+            rowData(2) = selectPosition.Text
+            rowData(3) = txtHonor.Text
+            rowData(4) = txtDate.Text
+            rowData(5) = txtNumClosing.Text
+            rowData(6) = commision.ToString("N0", Globalization.CultureInfo.GetCultureInfo("id-ID"))
+            rowData(7) = txtHonorCommision.Text
+
+            ' Tambah ke ListView
+            Dim listitem As ListViewItem = ListView1.Items.Add(rowData(0))
+            For i As Integer = 1 To 7
+                listitem.SubItems.Add(rowData(i))
+            Next
+
+            ' Simpan ke List (opsional)
+            dataList.Add(rowData)
+
+
+            'listitem = New ListViewItem
+            'listitem = ListView1.Items.Add(txtEmpNumber.Text)
+            'listitem.SubItems.Add(txtName.Text)
+            'listitem.SubItems.Add(selectPosition.Text)
+            'listitem.SubItems.Add(txtHonor.Text)
+            'listitem.SubItems.Add(txtDate.Text)
+            'listitem.SubItems.Add(txtNumClosing.Text)
+            'listitem.SubItems.Add(commision.ToString("N0", Globalization.CultureInfo.GetCultureInfo("id-ID")))
+            'listitem.SubItems.Add(txtHonorCommision.Text)
+
+            clearInput()
+
+            MessageBox.Show("Berhasil")
+        End If
     End Sub
+
+    Private Sub Button2_Click(sender As Object, e As EventArgs) Handles Button2.Click
+        clearInput()
+    End Sub
+
+    Private Sub Button3_Click(sender As Object, e As EventArgs) Handles Button3.Click
+        Close()
+    End Sub
+
 End Class
