@@ -402,9 +402,8 @@ Partial Class Form1
             rate = (8 / 100)
         End If
 
-        commision = numClosing * rate * honor
+        commision = Math.Ceiling(numClosing * rate * honor)
 
-        Debug.WriteLine(commision)
         txtAmountCommision.Text = commision.ToString("N0", Globalization.CultureInfo.GetCultureInfo("id-ID"))
         txtHonorCommision.Text = (commision + honor).ToString("N0", Globalization.CultureInfo.GetCultureInfo("id-ID"))
     End Sub
